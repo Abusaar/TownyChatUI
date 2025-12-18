@@ -13,6 +13,9 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 import net.minecraft.text.TextColor;
 import net.minecraft.text.Style;
+import net.minecraft.client.gui.Element;
+import net.minecraft.client.gui.Selectable;
+
 
 @Environment(EnvType.CLIENT)
 public class ChatUiMod implements ClientModInitializer {
@@ -49,7 +52,7 @@ public class ChatUiMod implements ClientModInitializer {
 					updateLabelButtonText();
 				} else if (text.contains("local")) {
 					currentChatChannel = "local";
-					System.out.println("[ChatUiMod] Channel updated to: local");
+				 System.out.println("[ChatUiMod] Channel updated to: local");
 					updateLabelButtonText();
 				} else if (text.contains("nation")) {
 					currentChatChannel = "nation";
@@ -72,29 +75,26 @@ public class ChatUiMod implements ClientModInitializer {
 
 		// Register screen event to render on chat screen
 		ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-			if (screen instanceof ChatScreen) {
+			if (screen instanceof ChatScreen chatScreen) {
+				// Remember the current focused element (the chat input)
+				Element chatInput = chatScreen.getFocused();
+
 				// Prepare positions
 				labelW = 70; labelH = 18; labelX = 10; labelY = 10;
 				rotateW = 18; rotateH = 18; rotateX = labelX + labelW + 4; rotateY = labelY;
 
-				// Create vanilla-style label button with colored text
 				Text labelText = Text.literal(currentChatChannel.toUpperCase())
 					.setStyle(Style.EMPTY.withColor(TextColor.fromRgb(getChannelColor(currentChatChannel) & 0xFFFFFF)));
-				labelBtn = ButtonWidget.builder(labelText, b -> {})
-					.dimensions(labelX, labelY, labelW, labelH)
-					.build();
-				labelBtn.active = false; // Disable focus to prevent keyboard navigation
+				labelBtn = new NonFocusableButton(labelX, labelY, labelW, labelH, labelText, b -> {}, chatScreen, chatInput);
 
-				// Create vanilla-style rotate button
-				rotateBtn = ButtonWidget.builder(Text.literal("⟳"), b -> sendSwitchCommand(client, (ChatScreen) screen))
-					.dimensions(rotateX, rotateY, rotateW, rotateH)
-					.build();
-				rotateBtn.active = false; // Disable focus to prevent keyboard navigation
+				rotateBtn = new NonFocusableButton(rotateX, rotateY, rotateW, rotateH, Text.literal("⟳"),
+						b -> sendSwitchCommand(client, chatScreen), chatScreen, chatInput);
 
-				Screens.getButtons((Screen) screen).add(labelBtn);
-				Screens.getButtons((Screen) screen).add(rotateBtn);
+				Screens.getButtons(chatScreen).add(labelBtn);
+				Screens.getButtons(chatScreen).add(rotateBtn);
 			}
 		});
+
 	}
 
 	private void updateLabelButtonText() {
@@ -149,4 +149,39 @@ public class ChatUiMod implements ClientModInitializer {
 			default -> 0xFFFFFFFF;
 		};
 	}
+
+	class NonFocusableButton extends ButtonWidget {
+        private final Screen parent;
+        private final Element defaultFocus;
+
+        public NonFocusableButton(int x, int y, int width, int height, Text message,
+                                  ButtonWidget.PressAction onPress,
+                                  Screen parent, Element defaultFocus) {
+            super(x, y, width, height, message, onPress, DEFAULT_NARRATION_SUPPLIER);
+            this.parent = parent;
+            this.defaultFocus = defaultFocus;
+        }
+
+        @Override
+        public void setFocused(boolean focused) {
+            if (focused) restoreChatFocus();
+        }
+
+		public boolean changeFocus(boolean lookForwards) {
+		restoreChatFocus();
+		return false; // don't keep focus here
+	}
+
+        private void restoreChatFocus() {
+            if (parent != null && defaultFocus != null) {
+                parent.setFocused(defaultFocus);
+				parent.setFocused(defaultFocus);
+            }
+        }
+
+        @Override
+        public Selectable.SelectionType getType() {
+            return Selectable.SelectionType.NONE;
+        }
+    }
 }
