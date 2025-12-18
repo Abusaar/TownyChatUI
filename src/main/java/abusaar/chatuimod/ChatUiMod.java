@@ -83,11 +83,13 @@ public class ChatUiMod implements ClientModInitializer {
 				labelBtn = ButtonWidget.builder(labelText, b -> {})
 					.dimensions(labelX, labelY, labelW, labelH)
 					.build();
+				labelBtn.active = false; // Disable focus to prevent keyboard navigation
 
 				// Create vanilla-style rotate button
 				rotateBtn = ButtonWidget.builder(Text.literal("⟳"), b -> sendSwitchCommand(client, (ChatScreen) screen))
 					.dimensions(rotateX, rotateY, rotateW, rotateH)
 					.build();
+				rotateBtn.active = false; // Disable focus to prevent keyboard navigation
 
 				Screens.getButtons((Screen) screen).add(labelBtn);
 				Screens.getButtons((Screen) screen).add(rotateBtn);
