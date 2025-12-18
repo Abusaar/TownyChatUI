@@ -8,7 +8,6 @@ import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
@@ -56,6 +55,10 @@ public class ChatUiMod implements ClientModInitializer {
 					currentChatChannel = "nation";
 					System.out.println("[ChatUiMod] Channel updated to: nation");
 					updateLabelButtonText();
+				} else if (text.contains("alliance")) {
+					currentChatChannel = "alliance";
+					System.out.println("[ChatUiMod] Channel updated to: alliance");
+					updateLabelButtonText();
 				} else if (text.contains(" town")) {
 					currentChatChannel = "town";
 					System.out.println("[ChatUiMod] Channel updated to: town");
@@ -82,7 +85,7 @@ public class ChatUiMod implements ClientModInitializer {
 					.build();
 
 				// Create vanilla-style rotate button
-				rotateBtn = ButtonWidget.builder(Text.literal("⟳"), b -> sendSwitchCommand(client))
+				rotateBtn = ButtonWidget.builder(Text.literal("⟳"), b -> sendSwitchCommand(client, (ChatScreen) screen))
 					.dimensions(rotateX, rotateY, rotateW, rotateH)
 					.build();
 
@@ -100,7 +103,7 @@ public class ChatUiMod implements ClientModInitializer {
 		}
 	}
 
-	private void sendSwitchCommand(MinecraftClient client) {
+	private void sendSwitchCommand(MinecraftClient client, ChatScreen chatScreen) {
 		String cmd;
 		switch (currentChatChannel) {
 			case "staff":
@@ -116,7 +119,10 @@ public class ChatUiMod implements ClientModInitializer {
 				cmd = "/nc"; // town -> nation
 				break;
 			case "nation":
-				cmd = "/gc"; // nation -> general
+				cmd = "/ac"; // nation -> alliance
+				break;
+			case "alliance":
+				cmd = "/gc"; // alliance -> general
 				break;
 			default:
 				cmd = "/gc";
@@ -125,6 +131,8 @@ public class ChatUiMod implements ClientModInitializer {
 		System.out.println("[ChatUiMod] Sending command: " + cmd);
 		if (client.player != null && client.player.networkHandler != null) {
 			client.player.networkHandler.sendChatMessage(cmd);
+			// Re-open chat screen to restore focus
+			client.setScreen(new ChatScreen("", false));
 		}
 	}
 
@@ -134,6 +142,7 @@ public class ChatUiMod implements ClientModInitializer {
 			case "local" -> 0xFFFFA500;
 			case "nation" -> 0xFFFFFF00;
 			case "town" -> 0xFF87CEEB;
+			case "alliance" -> 0xFF90EE90;
 			case "staff" -> 0xFF00FF00;
 			default -> 0xFFFFFFFF;
 		};
